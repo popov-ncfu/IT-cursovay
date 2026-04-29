@@ -7,6 +7,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { ItemsModule } from './items/items.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import { AuditModule } from './audit/audit.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { TransactionsModule } from './transactions/transactions.module';
     AuthModule,
     ItemsModule,
     TransactionsModule,
+    AuditModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
