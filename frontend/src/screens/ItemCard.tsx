@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchAuditLogs } from '../api/audit';
 import { fetchItem } from '../api/items';
 import { AuditLog, Item } from '../types/inventory';
+import AppShell from '../layout/AppShell';
 
 type AuditLogWithDelta = AuditLog & {
   delta?: number;
@@ -50,64 +51,90 @@ export default function ItemCard() {
   }, [item]);
 
   return (
-    <div style={{ padding: 16, maxWidth: 900 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', marginBottom: 16 }}>
-        <Link to="/items">Back to items</Link>
-        <h2 style={{ margin: 0 }}>{header || 'Item'}</h2>
+    <AppShell title={header || 'Товар'}>
+      <div className="row" style={{ marginBottom: 12 }}>
+        <Link to="/items" className="navLink">
+          ← Назад к товарам
+        </Link>
       </div>
 
       {loading || !item ? (
-        <div>Loading...</div>
+        <div className="subtle">Загрузка…</div>
       ) : (
         <>
-          <div style={{ border: '1px solid #e5e5e5', borderRadius: 10, padding: 16 }}>
-            <div style={{ marginBottom: 8 }}>
-              <b>Quantity:</b> {item.quantity}
-            </div>
-            <div style={{ marginBottom: 8 }}>
-              <b>Threshold:</b> {item.threshold}
-            </div>
-            <div style={{ marginBottom: 8 }}>
-              <b>Category:</b> {item.category?.name ?? item.categoryId}
-            </div>
-            <div style={{ marginBottom: 8 }}>
-              <b>Location:</b> {item.location?.name ?? item.locationId}
-            </div>
-            <div>
-              <b>Owner:</b> {item.owner?.email ?? item.ownerId ?? '—'}
+          <div className="card">
+            <div className="cardBody">
+              <div className="grid2">
+                <div className="stack">
+                  <div>
+                    <div className="subtle">Количество</div>
+                    <div style={{ fontWeight: 900, fontSize: 22 }}>{item.quantity}</div>
+                  </div>
+                  <div>
+                    <div className="subtle">Порог</div>
+                    <div style={{ fontWeight: 850 }}>{item.threshold}</div>
+                  </div>
+                </div>
+
+                <div className="stack">
+                  <div>
+                    <div className="subtle">Категория</div>
+                    <div style={{ fontWeight: 800 }}>{item.category?.name ?? item.categoryId}</div>
+                  </div>
+                  <div>
+                    <div className="subtle">Локация</div>
+                    <div style={{ fontWeight: 800 }}>{item.location?.name ?? item.locationId}</div>
+                  </div>
+                  <div>
+                    <div className="subtle">Владелец</div>
+                    <div style={{ fontWeight: 800 }}>{item.owner?.email ?? item.ownerId ?? '—'}</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <h3 style={{ marginTop: 24 }}>Related transactions (audit)</h3>
+          <div className="pageTitle" style={{ marginTop: 18 }}>
+            <h3>Связанные операции (аудит)</h3>
+            <span className="badge">Всего: {auditLogs.length}</span>
+          </div>
+
           {auditLogs.length === 0 ? (
-            <div>No transaction audit logs for this item yet.</div>
+            <div className="card">
+              <div className="cardBody">
+                <div className="subtle">По этому товару ещё нет записей аудита операций.</div>
+              </div>
+            </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div className="stack" style={{ gap: 10 }}>
               {auditLogs.slice(0, 20).map((log) => {
                 const type = log.action;
                 const qty = log.changes?.request?.quantity as number | undefined;
                 const delta = log.delta;
+                const badge =
+                  type === 'OUT'
+                    ? 'badge badgeDanger'
+                    : type === 'IN'
+                      ? 'badge badgeOk'
+                      : 'badge';
                 return (
-                  <div
-                    key={log.id}
-                    style={{
-                      border: '1px solid #e5e5e5',
-                      borderRadius: 10,
-                      padding: 12,
-                      background: type === 'OUT' ? '#fff7f0' : '#fff',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                      <div style={{ fontWeight: 700 }}>
-                        {type}
-                        {qty !== undefined ? ` (${qty})` : ''}
+                  <div key={log.id} className="card" style={{ boxShadow: 'none', background: 'rgba(255,255,255,.04)' }}>
+                    <div className="cardBody" style={{ padding: 12 }}>
+                      <div className="row" style={{ alignItems: 'flex-start' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                          <span className={badge}>
+                            {type}
+                            {qty !== undefined ? ` (${qty})` : ''}
+                          </span>
+                          {delta !== undefined ? (
+                            <span className={delta === 0 ? 'badge' : delta > 0 ? 'badge badgeOk' : 'badge badgeDanger'}>
+                              изменение {delta > 0 ? '+' : ''}
+                              {delta}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="subtle">{formatDate(log.createdAt)}</div>
                       </div>
-                      <div style={{ color: '#666' }}>{formatDate(log.createdAt)}</div>
-                    </div>
-                    <div style={{ marginTop: 6, color: '#333' }}>
-                      {delta !== undefined
-                        ? `Quantity delta: ${delta > 0 ? '+' : ''}${delta}`
-                        : 'Quantity delta: —'}
                     </div>
                   </div>
                 );
@@ -116,7 +143,7 @@ export default function ItemCard() {
           )}
         </>
       )}
-    </div>
+    </AppShell>
   );
 }
 

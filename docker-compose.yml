@@ -17,11 +17,11 @@ services:
       context: ./backend
     environment:
       DATABASE_URL: postgres://inventoryflow:inventoryflow@postgres:5432/inventoryflow?schema=public
-      PORT: 3000
+      PORT: 3001
       JWT_ACCESS_SECRET: change_me
       JWT_REFRESH_SECRET: change_me
     ports:
-      - "3000:3000"
+      - "3001:3001"
     depends_on:
       - postgres
 
@@ -29,7 +29,7 @@ services:
     build:
       context: ./frontend
     environment:
-      VITE_API_BASE_URL: http://localhost:3000
+      VITE_API_BASE_URL: http://localhost:3001
     ports:
       - "5173:5173"
     depends_on:

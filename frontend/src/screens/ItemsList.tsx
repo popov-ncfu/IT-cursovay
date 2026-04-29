@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchCategories, fetchItems, fetchLocations } from '../api/items';
 import { Item } from '../types/inventory';
+import AppShell from '../layout/AppShell';
 
 function isLowStock(item: Item) {
   return item.threshold > 0 && item.quantity < item.threshold;
@@ -56,108 +57,134 @@ export default function ItemsList() {
   const pageIndex = Math.floor(skip / take);
 
   return (
-    <div style={{ padding: 16, maxWidth: 900 }}>
-      <h2>Items</h2>
+    <AppShell title="Товары">
+      <div className="card">
+        <div className="cardBody">
+          <div className="row" style={{ gap: 12 }}>
+            <div style={{ flex: 2, minWidth: 220 }}>
+              <label>
+                Поиск
+                <input
+                  placeholder="Название или описание…"
+                  value={q}
+                  onChange={(e) => {
+                    setSkip(0);
+                    setQ(e.target.value);
+                  }}
+                />
+              </label>
+            </div>
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-        <input
-          placeholder="Search name/description"
-          value={q}
-          onChange={(e) => {
-            setSkip(0);
-            setQ(e.target.value);
-          }}
-        />
+            <div style={{ flex: 1, minWidth: 180 }}>
+              <label>
+                Категория
+                <select
+                  value={categoryId}
+                  onChange={(e) => {
+                    setSkip(0);
+                    setCategoryId(e.target.value);
+                  }}
+                >
+                  <option value="">Все</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
 
-        <select
-          value={categoryId}
-          onChange={(e) => {
-            setSkip(0);
-            setCategoryId(e.target.value);
-          }}
-        >
-          <option value="">All categories</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+            <div style={{ flex: 1, minWidth: 180 }}>
+              <label>
+                Локация
+                <select
+                  value={locationId}
+                  onChange={(e) => {
+                    setSkip(0);
+                    setLocationId(e.target.value);
+                  }}
+                >
+                  <option value="">Все</option>
+                  {locations.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
 
-        <select
-          value={locationId}
-          onChange={(e) => {
-            setSkip(0);
-            setLocationId(e.target.value);
-          }}
-        >
-          <option value="">All locations</option>
-          {locations.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
-            </option>
-          ))}
-        </select>
+          <div className="divider" />
+
+          <div className="row">
+            <span className="subtle">
+              Показано {items.length} из {total}
+            </span>
+            <div className="pageTitleRight">
+              <button
+                className="btn btnSm"
+                type="button"
+                disabled={pageIndex <= 0 || loading}
+                onClick={() => setSkip(Math.max(0, skip - take))}
+              >
+                Назад
+              </button>
+              <span className="badge">
+                Страница {pageIndex + 1} / {pageCount}
+              </span>
+              <button
+                className="btn btnSm"
+                type="button"
+                disabled={pageIndex >= pageCount - 1 || loading}
+                onClick={() => setSkip(Math.min(total - take, skip + take))}
+              >
+                Вперёд
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {loading ? (
-        <div>Loading...</div>
-      ) : items.length === 0 ? (
-        <div>No items found.</div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
-          {items.map((item) => (
-            <Link
-              key={item.id}
-              to={`/items/${item.id}`}
-              style={{
-                textDecoration: 'none',
-                border: '1px solid #e5e5e5',
-                borderRadius: 8,
-                padding: 12,
-                background: isLowStock(item) ? '#fff7f0' : '#fff',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ fontWeight: 600, color: '#111' }}>{item.name}</div>
-                {isLowStock(item) ? (
-                  <div style={{ color: '#b45309', fontWeight: 600 }}>LOW</div>
-                ) : null}
+      <div style={{ marginTop: 14 }}>
+        {loading ? (
+          <div className="subtle">Загрузка…</div>
+        ) : items.length === 0 ? (
+          <div className="card">
+            <div className="cardBody">
+              <div className="cardTitle">Ничего не найдено</div>
+              <div className="subtle" style={{ marginTop: 6 }}>
+                Попробуйте изменить фильтры или запрос.
               </div>
-              <div style={{ marginTop: 8 }}>
-                <b>Quantity:</b> {item.quantity}
-              </div>
-              <div>
-                <b>Threshold:</b> {item.threshold}
-              </div>
-              <div style={{ marginTop: 8 }}>
-                <b>Location:</b> {item.locationId}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 16 }}>
-        <button
-          type="button"
-          disabled={pageIndex <= 0 || loading}
-          onClick={() => setSkip(Math.max(0, skip - take))}
-        >
-          Prev
-        </button>
-        <div>
-          Page {pageIndex + 1} / {pageCount}
-        </div>
-        <button
-          type="button"
-          disabled={pageIndex >= pageCount - 1 || loading}
-          onClick={() => setSkip(Math.min(total - take, skip + take))}
-        >
-          Next
-        </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid2">
+            {items.map((item) => (
+              <Link key={item.id} to={`/items/${item.id}`} className="card" style={{ padding: 0 }}>
+                <div className="cardBody">
+                  <div className="row">
+                    <div style={{ fontWeight: 850, color: 'var(--text)' }}>{item.name}</div>
+                    {isLowStock(item) ? (
+                      <span className="badge badgeWarn">МАЛО</span>
+                    ) : (
+                      <span className="badge badgeOk">ОК</span>
+                    )}
+                  </div>
+                  <div className="divider" />
+                  <div className="row" style={{ justifyContent: 'flex-start', gap: 10 }}>
+                    <span className="badge">Кол-во {item.quantity}</span>
+                    <span className="badge">Порог {item.threshold}</span>
+                    <span className="badge">Локация {item.locationId}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </AppShell>
   );
 }
 

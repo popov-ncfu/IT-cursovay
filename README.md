@@ -17,7 +17,7 @@ Monorepo for a course project:
    `docker compose up --build`
 
 2. Frontend: http://localhost:5173
-3. Backend health endpoint (to be implemented later): http://localhost:3000/health
+3. Backend health endpoint: http://localhost:3001/health
 
 ## Repo layout
 

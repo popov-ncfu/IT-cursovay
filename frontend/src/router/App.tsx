@@ -7,6 +7,8 @@ import RequireAuth from './RequireAuth';
 import { useAuth } from '../state/auth';
 import ItemsList from '../screens/ItemsList';
 import ItemCard from '../screens/ItemCard';
+import Transactions from '../screens/Transactions';
+import AdminUsers from '../screens/AdminUsers';
 
 export default function App() {
   const { refreshIfNeeded, accessToken } = useAuth();
@@ -17,7 +19,18 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!bootstrapped) return <div style={{ padding: 16 }}>Loading...</div>;
+  if (!bootstrapped)
+    return (
+      <div className="authWrap">
+        <div className="card authCard">
+          <div className="brand" style={{ marginBottom: 10 }}>
+            <span className="brandDot" />
+            InventoryFlow
+          </div>
+          <div className="subtle">Загрузка…</div>
+        </div>
+      </div>
+    );
 
   return (
     <Routes>
@@ -51,6 +64,24 @@ export default function App() {
         element={
           <RequireAuth>
             <ItemCard />
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/transactions"
+        element={
+          <RequireAuth>
+            <Transactions />
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/admin/users"
+        element={
+          <RequireAuth>
+            <AdminUsers />
           </RequireAuth>
         }
       />

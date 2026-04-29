@@ -5,10 +5,11 @@ import { fetchAuditLogs } from '../api/audit';
 import { fetchItems } from '../api/items';
 import { fetchNotifications } from '../api/notifications';
 import { AuditLog, Item, Notification } from '../types/inventory';
+import AppShell from '../layout/AppShell';
 
 export default function Dashboard() {
   const nav = useNavigate();
-  const { user, logout, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   const [lowStockItems, setLowStockItems] = useState<Item[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState<Notification[]>([]);
@@ -51,95 +52,77 @@ export default function Dashboard() {
   }, [lowStockItems]);
 
   return (
-    <div style={{ padding: 16, maxWidth: 900 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-        <h2 style={{ margin: 0 }}>Dashboard</h2>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <Link to="/items">Items</Link>
-        </div>
-      </div>
+    <AppShell title="Дашборд">
+      {dataLoading ? <div className="subtle">Загрузка дашборда…</div> : null}
 
-      {user ? (
-        <div style={{ marginBottom: 16 }}>
-          <div>
-            <b>Email:</b> {user.email}
+      <div className="grid2" style={{ marginTop: 10 }}>
+        <div className="card">
+          <div className="cardHeader">
+            <div className="cardTitle">Низкий остаток</div>
+            <span className={lowStockItems.length ? 'badge badgeWarn' : 'badge badgeOk'}>
+              {lowStockItems.length ? `Требует внимания: ${lowStockItems.length}` : 'Всё в норме'}
+            </span>
           </div>
-          <div>
-            <b>Role:</b> {user.role}
-          </div>
-        </div>
-      ) : (
-        <div>Loading user...</div>
-      )}
-
-      <button
-        onClick={() => void logout()}
-        disabled={loading}
-        type="button"
-        style={{ marginBottom: 16 }}
-      >
-        {loading ? 'Signing out...' : 'Logout'}
-      </button>
-
-      {dataLoading ? (
-        <div>Loading dashboard...</div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 16 }}>
-          <div style={{ border: '1px solid #e5e5e5', borderRadius: 10, padding: 16 }}>
-            <h3 style={{ marginTop: 0 }}>Low stock</h3>
-            <div style={{ marginBottom: 12 }}>
-              <b>Total low-stock:</b> {lowStockItems.length}
-            </div>
+          <div className="cardBody">
             {lowStockSummary.length === 0 ? (
-              <div>No low-stock items.</div>
+              <div className="subtle">Нет товаров с низким остатком.</div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="stack" style={{ gap: 10 }}>
                 {lowStockSummary.map((it) => (
-                  <Link key={it.id} to={`/items/${it.id}`} style={{ textDecoration: 'none' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                      <div style={{ fontWeight: 600 }}>{it.name}</div>
-                      <div style={{ color: '#b45309', fontWeight: 700 }}>
+                  <Link key={it.id} to={`/items/${it.id}`} className="navLink" style={{ borderRadius: 12 }}>
+                    <div className="row" style={{ width: '100%' }}>
+                      <div style={{ fontWeight: 750, color: 'var(--text)' }}>{it.name}</div>
+                      <span className="badge badgeWarn">
                         {it.quantity}/{it.threshold}
-                      </div>
+                      </span>
                     </div>
                   </Link>
                 ))}
                 {lowStockItems.length > lowStockSummary.length ? (
-                  <div style={{ opacity: 0.7 }}>
-                    +{lowStockItems.length - lowStockSummary.length} more in Items list
-                  </div>
+                  <div className="subtle">+{lowStockItems.length - lowStockSummary.length} ещё в списке товаров</div>
                 ) : null}
               </div>
             )}
           </div>
+        </div>
 
-          <div style={{ border: '1px solid #e5e5e5', borderRadius: 10, padding: 16 }}>
-            <h3 style={{ marginTop: 0 }}>Notifications</h3>
-            <div style={{ marginBottom: 12 }}>
-              <b>Unread:</b> {unreadCount}
-            </div>
+        <div className="card">
+          <div className="cardHeader">
+            <div className="cardTitle">Уведомления</div>
+            <span className={unreadCount ? 'badge badgeWarn' : 'badge badgeOk'}>
+              {unreadCount ? `Непрочитано: ${unreadCount}` : 'Нет'}
+            </span>
+          </div>
+          <div className="cardBody">
             {unreadNotifications.length === 0 ? (
-              <div>No unread notifications.</div>
+              <div className="subtle">Нет непрочитанных уведомлений.</div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="stack" style={{ gap: 10 }}>
                 {unreadNotifications.slice(0, 4).map((n) => (
-                  <div key={n.id} style={{ border: '1px solid #f0f0f0', borderRadius: 10, padding: 12 }}>
-                    <div style={{ fontWeight: 600 }}>{n.message}</div>
-                    <div style={{ marginTop: 6, color: '#666', fontSize: 12 }}>
-                      {formatDate(n.createdAt)}
+                  <div key={n.id} className="card" style={{ boxShadow: 'none', background: 'rgba(255,255,255,.04)' }}>
+                    <div className="cardBody" style={{ padding: 12 }}>
+                      <div style={{ fontWeight: 750 }}>{n.message}</div>
+                      <div className="subtle" style={{ marginTop: 6 }}>
+                        {formatDate(n.createdAt)}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+        </div>
 
-          <div style={{ gridColumn: '1 / -1', border: '1px solid #e5e5e5', borderRadius: 10, padding: 16 }}>
-            <h3 style={{ marginTop: 0 }}>Last operations</h3>
+        <div className="card" style={{ gridColumn: '1 / -1' }}>
+          <div className="cardHeader">
+            <div className="cardTitle">Последние операции</div>
+            <span className="badge">Последних: {recentTransactions.length}</span>
+          </div>
+          <div className="cardBody">
             {recentTransactions.length === 0 ? (
-              <div>No operations yet.</div>
+              <div className="subtle">Операций пока нет.</div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="stack" style={{ gap: 10 }}>
                 {recentTransactions.map((log) => {
                   const beforeQty = (log.changes?.before?.quantity as number | undefined) ?? undefined;
                   const afterQty = (log.changes?.after?.quantity as number | undefined) ?? undefined;
@@ -149,36 +132,32 @@ export default function Dashboard() {
                   return (
                     <div
                       key={log.id}
-                      style={{
-                        border: '1px solid #f0f0f0',
-                        borderRadius: 10,
-                        padding: 12,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        gap: 12,
-                        alignItems: 'center',
-                      }}
+                      className="card"
+                      style={{ boxShadow: 'none', background: 'rgba(255,255,255,.04)' }}
                     >
-                      <div style={{ fontWeight: 700 }}>
-                        {log.action}
-                        {qty !== undefined ? ` (${qty})` : ''}
-                        {log.itemId ? (
-                          <span style={{ marginLeft: 8 }}>
-                            item:{' '}
-                            <Link to={`/items/${log.itemId}`} style={{ marginLeft: 6 }}>
-                              {log.itemId}
-                            </Link>
-                          </span>
-                        ) : null}
-                      </div>
-                      <div style={{ color: '#666', fontSize: 12, textAlign: 'right' }}>
-                        {formatDate(log.createdAt)}
-                        {delta !== undefined ? (
-                          <div style={{ marginTop: 4 }}>
-                            delta: {delta > 0 ? '+' : ''}
-                            {delta}
+                      <div className="cardBody" style={{ padding: 12 }}>
+                        <div className="row" style={{ alignItems: 'flex-start' }}>
+                          <div style={{ fontWeight: 850 }}>
+                            {log.action}
+                            {qty !== undefined ? ` (${qty})` : ''}
+                            {log.itemId ? (
+                              <span style={{ marginLeft: 8, fontWeight: 650 }}>
+                                <span className="subtle">товар</span>{' '}
+                                <Link to={`/items/${log.itemId}`}>{log.itemId}</Link>
+                              </span>
+                            ) : null}
                           </div>
-                        ) : null}
+
+                          <div style={{ textAlign: 'right' }}>
+                            <div className="subtle">{formatDate(log.createdAt)}</div>
+                            {delta !== undefined ? (
+                              <div className={delta === 0 ? 'badge' : delta > 0 ? 'badge badgeOk' : 'badge badgeDanger'}>
+                                изменение {delta > 0 ? '+' : ''}
+                                {delta}
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );
@@ -187,8 +166,8 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </AppShell>
   );
 }
 

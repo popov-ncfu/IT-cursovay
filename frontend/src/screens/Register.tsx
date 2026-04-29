@@ -17,34 +17,51 @@ export default function Register() {
       await register(email, password);
       nav('/dashboard');
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? err?.message ?? 'Register failed');
+      setError(err?.response?.data?.message ?? err?.message ?? 'Не удалось зарегистрироваться');
     }
   };
 
   return (
-    <div style={{ padding: 16, maxWidth: 420 }}>
-      <h2>Register</h2>
-      <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <input
-          placeholder="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-        />
-        <input
-          placeholder="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          type="password"
-          autoComplete="new-password"
-        />
-        {error ? <div style={{ color: 'crimson' }}>{error}</div> : null}
-        <button disabled={loading} type="submit">
-          {loading ? 'Creating...' : 'Create account'}
-        </button>
-      </form>
-      <div style={{ marginTop: 12 }}>
-        Have an account? <a href="/login">Login</a>
+    <div className="authWrap">
+      <div className="card authCard">
+        <div className="brand" style={{ marginBottom: 14 }}>
+          <span className="brandDot" />
+          InventoryFlow
+        </div>
+        <h2 className="authHeading">Регистрация</h2>
+        <div className="subtle" style={{ marginBottom: 14 }}>
+          Начните вести складской учёт за пару минут.
+        </div>
+
+        <form onSubmit={onSubmit} className="stack">
+          <label>
+            Email
+            <input
+              placeholder="you@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+            />
+          </label>
+          <label>
+            Пароль
+            <input
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              autoComplete="new-password"
+            />
+          </label>
+          {error ? <div className="error">{error}</div> : null}
+          <button className="btn btnPrimary" disabled={loading} type="submit">
+            {loading ? 'Создаём…' : 'Создать аккаунт'}
+          </button>
+        </form>
+
+        <div className="subtle" style={{ marginTop: 12 }}>
+          Уже есть аккаунт? <a href="/login">Войти</a>
+        </div>
       </div>
     </div>
   );
