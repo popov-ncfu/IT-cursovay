@@ -34,6 +34,7 @@ model User {
 
   auditLogs      AuditLog[]    @relation("AuditActor")
   notifications  Notification[]
+  refreshTokens RefreshToken[]
 }
 
 model Category {
@@ -157,5 +158,27 @@ model Notification {
   item   Item? @relation(fields: [itemId], references: [id])
 
   @@index([userId, isRead])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // When to consider the refresh token invalid due to expiration.
+  expiresAt DateTime
+
+  // Set when the token is rotated/revoked.
+  revokedAt DateTime?
+  // Hash of the token that replaced this one (for rotation auditing/debugging).
+  replacedByTokenHash String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([revokedAt])
+  @@index([expiresAt])
 }
 
