@@ -5,6 +5,8 @@ import Login from '../screens/Login';
 import Register from '../screens/Register';
 import RequireAuth from './RequireAuth';
 import { useAuth } from '../state/auth';
+import ItemsList from '../screens/ItemsList';
+import ItemCard from '../screens/ItemCard';
 
 export default function App() {
   const { refreshIfNeeded, accessToken } = useAuth();
@@ -31,6 +33,24 @@ export default function App() {
         element={
           <RequireAuth>
             <Dashboard />
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/items"
+        element={
+          <RequireAuth>
+            <ItemsList />
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/items/:id"
+        element={
+          <RequireAuth>
+            <ItemCard />
           </RequireAuth>
         }
       />
