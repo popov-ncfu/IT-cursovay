@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  VIEWER
+}
+
+enum TransactionType {
+  IN
+  OUT
+  MOVE
+}
+
+model User {
+  id           String         @id @default(uuid())
+  email        String         @unique
+  passwordHash String
+  role         Role           @default(VIEWER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownedItems          Item[]          @relation("ItemOwner")
+  transactionsCreated Transaction[]   @relation("TransactionActor")
+  transactionsFromOwners Transaction[] @relation("TransactionFromOwner")
+  transactionsToOwners   Transaction[] @relation("TransactionToOwner")
+
+  auditLogs      AuditLog[]    @relation("AuditActor")
+  notifications  Notification[]
+}
+
+model Category {
+  id   String @id @default(uuid())
+  name String @unique
+
+  items Item[]
+}
+
+model Location {
+  id   String @id @default(uuid())
+  name String @unique
+
+  items Item[]
+
+  transactionsFrom Transaction[] @relation("TransactionFromLocation")
+  transactionsTo   Transaction[] @relation("TransactionToLocation")
+}
+
+model Item {
+  id String @id @default(uuid())
+
+  name        String
+  description String?
+
+  quantity Int @default(0)
+  threshold Int @default(0)
+
+  categoryId String
+  locationId String
+  ownerId    String?
+
+  category Category @relation(fields: [categoryId], references: [id])
+  location Location @relation(fields: [locationId], references: [id])
+  owner    User?    @relation("ItemOwner", fields: [ownerId], references: [id])
+
+  transactions Transaction[]
+  auditLogs AuditLog[] @relation("ItemAudit")
+  notifications Notification[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([locationId])
+  @@index([ownerId])
+}
+
+model Transaction {
+  id   String @id @default(uuid())
+  type TransactionType
+
+  quantity Int
+
+  createdAt DateTime @default(now())
+
+  actorId String
+  actor   User    @relation("TransactionActor", fields: [actorId], references: [id])
+
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id])
+
+  fromLocationId String?
+  toLocationId   String?
+
+  fromOwnerId String?
+  toOwnerId   String?
+
+  fromLocation Location? @relation("TransactionFromLocation", fields: [fromLocationId], references: [id])
+  toLocation   Location? @relation("TransactionToLocation", fields: [toLocationId], references: [id])
+
+  fromOwner User? @relation("TransactionFromOwner", fields: [fromOwnerId], references: [id])
+  toOwner   User? @relation("TransactionToOwner", fields: [toOwnerId], references: [id])
+
+  auditLogs AuditLog[] @relation("TransactionAudit")
+  notifications Notification[]
+}
+
+model AuditLog {
+  id String @id @default(uuid())
+
+  entity   String
+  entityId String
+
+  action String
+  changes Json   @db.JsonB
+
+  createdAt DateTime @default(now())
+
+  actorId String?
+  actor   User?   @relation("AuditActor", fields: [actorId], references: [id])
+
+  // Optional back-references to keep navigation easy in future implementations.
+  itemId        String?
+  item          Item?         @relation("ItemAudit", fields: [itemId], references: [id])
+
+  transactionId String?
+  transaction   Transaction?  @relation("TransactionAudit", fields: [transactionId], references: [id])
+
+  @@index([entity])
+  @@index([entityId])
+  @@index([actorId])
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  message String
+  createdAt DateTime @default(now())
+
+  isRead Boolean @default(false)
+  readAt DateTime?
+
+  transactionId String?
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+
+  itemId String?
+  item   Item? @relation(fields: [itemId], references: [id])
+
+  @@index([userId, isRead])
+}
+
