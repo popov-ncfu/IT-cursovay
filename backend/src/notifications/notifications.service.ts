@@ -33,4 +33,3 @@ export class NotificationsService {
     return { notifications, total, skip, take };
   }
 }
-

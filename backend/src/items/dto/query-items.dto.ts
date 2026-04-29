@@ -30,4 +30,3 @@ export class QueryItemsDto {
   @Min(1)
   take?: number;
 }
-

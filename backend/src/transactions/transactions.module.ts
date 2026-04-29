@@ -9,4 +9,3 @@ import { RolesGuard } from '../auth/guards/roles.guard';
   providers: [TransactionsService, JwtAuthGuard, RolesGuard],
 })
 export class TransactionsModule {}
-

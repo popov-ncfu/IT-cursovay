@@ -1,26 +1,47 @@
 # InventoryFlow
 
-Monorepo for a course project:
+Монорепозиторий для курсового проекта:
 
-- `backend/` - NestJS (REST API)
-- `frontend/` - React + TypeScript (Vite)
-- PostgreSQL via Docker Compose
+- `backend/` — NestJS (REST API)
+- `frontend/` — React + TypeScript (Vite)
+- PostgreSQL через Docker Compose
 
-## Requirements
+## Требования
 
-- Docker Desktop (or Docker Engine) + Docker Compose
+- Docker Desktop (или Docker Engine) + Docker Compose
 
-## Local development
+## Локальная разработка
 
-1. Start services:
+1. Запустите сервисы:
 
    `docker compose up --build`
 
-2. Frontend: http://localhost:5173
-3. Backend health endpoint: http://localhost:3001/health
+2. Фронтенд: http://localhost:5173
+3. Хелсчек бэкенда: http://localhost:3001/health
 
-## Repo layout
+## Продакшен-подобный Docker (многоступенчатая сборка)
 
-- `backend/` - backend app (NestJS)
-- `frontend/` - frontend app (React)
+Сборка и запуск продакшен-целей (nginx отдаёт фронтенд на порту 8080):
 
+`docker compose -f docker-compose.prod.yml up --build`
+
+- Фронтенд: http://localhost:8080
+- Хелсчек бэкенда: http://localhost:3001/health
+
+## Тесты
+
+Бэкенд:
+
+- Модульные: `cd backend && npm test`
+- Линтер: `cd backend && npm run lint`
+- E2E (требует Postgres + применённые миграции): `cd backend && npm run test:e2e`
+
+Фронтенд:
+
+- Дымовые тесты: `cd frontend && npm test`
+- Сборка: `cd frontend && npm run build`
+
+## Структура репозитория
+
+- `backend/` — приложение бэкенда (NestJS)
+- `frontend/` — приложение фронтенда (React)

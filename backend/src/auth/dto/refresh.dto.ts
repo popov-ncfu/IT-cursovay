@@ -5,4 +5,3 @@ export class RefreshDto {
   @MinLength(20)
   refreshToken: string;
 }
-

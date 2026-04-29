@@ -10,8 +10,10 @@ export class NotificationsController {
 
   @UseGuards(JwtAuthGuard)
   @Get('notifications')
-  async list(@Query() query: NotificationsQueryDto, @Req() req: { user: AuthUser }) {
+  async list(
+    @Query() query: NotificationsQueryDto,
+    @Req() req: { user: AuthUser },
+  ) {
     return this.notificationsService.listForUser(req.user, query);
   }
 }
-

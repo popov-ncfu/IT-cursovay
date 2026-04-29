@@ -15,8 +15,9 @@ services:
   backend:
     build:
       context: ./backend
-      target: dev
+      target: prod
     environment:
+      NODE_ENV: production
       DATABASE_URL: postgres://inventoryflow:inventoryflow@postgres:5432/inventoryflow?schema=public
       PORT: 3001
       JWT_ACCESS_SECRET: change_me
@@ -29,11 +30,14 @@ services:
   frontend:
     build:
       context: ./frontend
-      target: dev
+      target: prod
+      args:
+        VITE_API_BASE_URL: http://localhost:3001
     environment:
-      VITE_API_BASE_URL: http://localhost:3001
+      # Build-time env is handled by Vite; runtime is static.
+      # Keep API base url consistent with external access.
     ports:
-      - "5173:5173"
+      - "8080:80"
     depends_on:
       - backend
 

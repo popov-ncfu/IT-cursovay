@@ -3,7 +3,7 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { Role, TransactionType } from '@prisma/client';
+import { Prisma, Role, TransactionType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthUser } from '../auth/types/jwt-payload.type';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -62,7 +62,9 @@ export class TransactionsService {
         };
 
         if (dto.toLocationId) {
-          const loc = await tx.location.findUnique({ where: { id: dto.toLocationId } });
+          const loc = await tx.location.findUnique({
+            where: { id: dto.toLocationId },
+          });
           if (!loc) throw new BadRequestException('Invalid toLocationId.');
         }
 
@@ -73,7 +75,9 @@ export class TransactionsService {
             if (actor.role !== Role.ADMIN && dto.toOwnerId !== actorId) {
               throw new ForbiddenException('Cannot assign ownerId.');
             }
-            const owner = await tx.user.findUnique({ where: { id: dto.toOwnerId } });
+            const owner = await tx.user.findUnique({
+              where: { id: dto.toOwnerId },
+            });
             if (!owner) throw new BadRequestException('Invalid toOwnerId.');
           }
         }
@@ -90,10 +94,14 @@ export class TransactionsService {
         };
       } else if (dto.type === TransactionType.OUT) {
         if (dto.quantity > before.quantity) {
-          throw new BadRequestException('Cannot OUT more than current quantity.');
+          throw new BadRequestException(
+            'Cannot OUT more than current quantity.',
+          );
         }
         if (dto.toLocationId || dto.toOwnerId) {
-          throw new BadRequestException('OUT does not support location/owner changes.');
+          throw new BadRequestException(
+            'OUT does not support location/owner changes.',
+          );
         }
 
         after = {
@@ -119,27 +127,39 @@ export class TransactionsService {
         // Move invariant: this implementation moves the whole item quantity.
         // This avoids splitting one Item across multiple locations.
         if (dto.quantity !== before.quantity) {
-          throw new BadRequestException('MOVE requires quantity to equal current item quantity.');
+          throw new BadRequestException(
+            'MOVE requires quantity to equal current item quantity.',
+          );
         }
 
         if (dto.fromLocationId && dto.fromLocationId !== before.locationId) {
-          throw new BadRequestException('fromLocationId does not match current item locationId.');
+          throw new BadRequestException(
+            'fromLocationId does not match current item locationId.',
+          );
         }
 
         if (dto.toOwnerId !== undefined) {
-          if (dto.toOwnerId !== null && actor.role !== Role.ADMIN && dto.toOwnerId !== actorId) {
+          if (
+            dto.toOwnerId !== null &&
+            actor.role !== Role.ADMIN &&
+            dto.toOwnerId !== actorId
+          ) {
             throw new ForbiddenException('Cannot assign ownerId.');
           }
         }
 
         if (dto.toLocationId) {
-          const loc = await tx.location.findUnique({ where: { id: dto.toLocationId } });
+          const loc = await tx.location.findUnique({
+            where: { id: dto.toLocationId },
+          });
           if (!loc) throw new BadRequestException('Invalid toLocationId.');
         }
 
         if (dto.toOwnerId !== undefined) {
           if (dto.toOwnerId !== null && dto.toOwnerId !== '') {
-            const owner = await tx.user.findUnique({ where: { id: dto.toOwnerId } });
+            const owner = await tx.user.findUnique({
+              where: { id: dto.toOwnerId },
+            });
             if (!owner) throw new BadRequestException('Invalid toOwnerId.');
           }
         }
@@ -169,17 +189,20 @@ export class TransactionsService {
         where: { id: dto.itemId },
         data: {
           quantity: after.quantity,
-          ...(dto.type === TransactionType.IN || dto.type === TransactionType.MOVE
+          ...(dto.type === TransactionType.IN ||
+          dto.type === TransactionType.MOVE
             ? { locationId: after.locationId ?? item.locationId }
             : {}),
-          ...(dto.type === TransactionType.IN || dto.type === TransactionType.MOVE
+          ...(dto.type === TransactionType.IN ||
+          dto.type === TransactionType.MOVE
             ? { ownerId: after.ownerId ?? null }
             : {}),
         },
         include: { category: true, location: true, owner: true },
       });
 
-      const lowStock = item.threshold > 0 && updatedItem.quantity < item.threshold;
+      const lowStock =
+        item.threshold > 0 && updatedItem.quantity < item.threshold;
 
       const createdTransaction = await tx.transaction.create({
         data: {
@@ -209,7 +232,7 @@ export class TransactionsService {
               ownerId: updatedItem.ownerId,
             },
             // Ensure DTO is treated as plain JSON for Prisma `Json` input.
-            request: { ...dto } as any,
+            request: dto as unknown as Prisma.InputJsonValue,
           },
           actorId,
           itemId: dto.itemId,
@@ -217,7 +240,7 @@ export class TransactionsService {
         },
       });
 
-      let notification: any = null;
+      let notification: { id: string } | null = null;
       if (lowStock) {
         const recipientUserId = updatedItem.ownerId ?? actorId;
         notification = await tx.notification.create({
@@ -238,4 +261,3 @@ export class TransactionsService {
     });
   }
 }
-

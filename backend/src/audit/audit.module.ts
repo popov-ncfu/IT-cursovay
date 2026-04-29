@@ -7,4 +7,3 @@ import { AuditService } from './audit.service';
   providers: [AuditService],
 })
 export class AuditModule {}
-

@@ -1,10 +1,4 @@
-import {
-  IsInt,
-  IsOptional,
-  IsString,
-  Min,
-  MinLength,
-} from 'class-validator';
+import { IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
 
 export class CreateItemDto {
   @IsString()
@@ -33,4 +27,3 @@ export class CreateItemDto {
   @IsString()
   ownerId?: string;
 }
-

@@ -40,4 +40,3 @@ export class CreateTransactionDto {
   @IsString()
   toOwnerId?: string;
 }
-

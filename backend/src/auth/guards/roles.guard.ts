@@ -23,8 +23,10 @@ export class RolesGuard implements CanActivate {
     // No role metadata => no RBAC requirement.
     if (requiredRoles.length === 0) return true;
 
-    const request = context.switchToHttp().getRequest();
-    const user = request.user as { role?: Role } | undefined;
+    const request = context
+      .switchToHttp()
+      .getRequest<{ user?: { role?: Role } }>();
+    const user = request.user;
 
     if (!user) throw new UnauthorizedException('Missing auth user.');
     if (!user.role) throw new UnauthorizedException('Missing user role.');
@@ -36,4 +38,3 @@ export class RolesGuard implements CanActivate {
     return true;
   }
 }
-

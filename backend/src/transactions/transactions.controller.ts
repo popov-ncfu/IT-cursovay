@@ -14,8 +14,10 @@ export class TransactionsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.MANAGER)
   @Post('transactions')
-  async create(@Body() dto: CreateTransactionDto, @Req() req: { user: AuthUser }) {
+  async create(
+    @Body() dto: CreateTransactionDto,
+    @Req() req: { user: AuthUser },
+  ) {
     return this.transactionsService.create(dto, req.user);
   }
 }
-

@@ -9,4 +9,3 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
   providers: [ItemsService, RolesGuard, JwtAuthGuard],
 })
 export class ItemsModule {}
-

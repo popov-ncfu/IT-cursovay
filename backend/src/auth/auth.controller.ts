@@ -36,15 +36,14 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async me(@Req() req: { user: AuthUser }) {
+  me(@Req() req: { user: AuthUser }) {
     return this.authService.me(req.user);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Get('admin')
-  async admin() {
+  admin() {
     return { ok: true };
   }
 }
-

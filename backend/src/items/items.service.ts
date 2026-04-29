@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthUser } from '../auth/types/jwt-payload.type';
@@ -30,7 +35,12 @@ export class ItemsService {
         ? {
             OR: [
               { name: { contains: query.q, mode: 'insensitive' as const } },
-              { description: { contains: query.q, mode: 'insensitive' as const } },
+              {
+                description: {
+                  contains: query.q,
+                  mode: 'insensitive' as const,
+                },
+              },
             ],
           }
         : {}),
@@ -64,21 +74,31 @@ export class ItemsService {
   }
 
   async create(dto: CreateItemDto, actor: AuthUser) {
-    const category = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
+    const category = await this.prisma.category.findUnique({
+      where: { id: dto.categoryId },
+    });
     if (!category) throw new BadRequestException('Invalid categoryId.');
 
-    const location = await this.prisma.location.findUnique({ where: { id: dto.locationId } });
+    const location = await this.prisma.location.findUnique({
+      where: { id: dto.locationId },
+    });
     if (!location) throw new BadRequestException('Invalid locationId.');
 
-    let ownerId: string | undefined | null = dto.ownerId ?? actor.userId;
+    const ownerId: string | undefined | null = dto.ownerId ?? actor.userId;
 
     // MANAGER can only create items for themselves by default.
-    if (dto.ownerId && actor.role !== Role.ADMIN && dto.ownerId !== actor.userId) {
+    if (
+      dto.ownerId &&
+      actor.role !== Role.ADMIN &&
+      dto.ownerId !== actor.userId
+    ) {
       throw new ForbiddenException('Cannot assign ownerId.');
     }
 
     if (ownerId) {
-      const owner = await this.prisma.user.findUnique({ where: { id: ownerId } });
+      const owner = await this.prisma.user.findUnique({
+        where: { id: ownerId },
+      });
       if (!owner) throw new BadRequestException('Invalid ownerId.');
     }
 
@@ -101,21 +121,31 @@ export class ItemsService {
     if (!existing) throw new NotFoundException('Item not found.');
 
     if (dto.categoryId) {
-      const category = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
+      const category = await this.prisma.category.findUnique({
+        where: { id: dto.categoryId },
+      });
       if (!category) throw new BadRequestException('Invalid categoryId.');
     }
 
     if (dto.locationId) {
-      const location = await this.prisma.location.findUnique({ where: { id: dto.locationId } });
+      const location = await this.prisma.location.findUnique({
+        where: { id: dto.locationId },
+      });
       if (!location) throw new BadRequestException('Invalid locationId.');
     }
 
     if (dto.ownerId !== undefined) {
-      if (dto.ownerId && actor.role !== Role.ADMIN && dto.ownerId !== actor.userId) {
+      if (
+        dto.ownerId &&
+        actor.role !== Role.ADMIN &&
+        dto.ownerId !== actor.userId
+      ) {
         throw new ForbiddenException('Cannot assign ownerId.');
       }
       if (dto.ownerId) {
-        const owner = await this.prisma.user.findUnique({ where: { id: dto.ownerId } });
+        const owner = await this.prisma.user.findUnique({
+          where: { id: dto.ownerId },
+        });
         if (!owner) throw new BadRequestException('Invalid ownerId.');
       }
     }
@@ -124,7 +154,9 @@ export class ItemsService {
       where: { id },
       data: {
         ...(dto.name !== undefined ? { name: dto.name } : {}),
-        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description }
+          : {}),
         ...(dto.quantity !== undefined ? { quantity: dto.quantity } : {}),
         ...(dto.threshold !== undefined ? { threshold: dto.threshold } : {}),
         ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId } : {}),
@@ -143,4 +175,3 @@ export class ItemsService {
     return { success: true };
   }
 }
-

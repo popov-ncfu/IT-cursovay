@@ -1,13 +1,22 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import type { StringValue } from 'ms';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { LogoutDto } from './dto/logout.dto';
-import { JwtAccessPayload, JwtRefreshPayload, AuthUser } from './types/jwt-payload.type';
-import { Role, User } from '@prisma/client';
+import {
+  JwtAccessPayload,
+  JwtRefreshPayload,
+  AuthUser,
+} from './types/jwt-payload.type';
+import { User } from '@prisma/client';
 import { createHash, randomUUID } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 
@@ -35,18 +44,32 @@ export class AuthService {
     const accessSecret = this.configService.get<string>('JWT_ACCESS_SECRET');
     const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
 
-    if (!accessSecret) throw new Error('JWT_ACCESS_SECRET env var is required.');
-    if (!refreshSecret) throw new Error('JWT_REFRESH_SECRET env var is required.');
+    if (!accessSecret)
+      throw new Error('JWT_ACCESS_SECRET env var is required.');
+    if (!refreshSecret)
+      throw new Error('JWT_REFRESH_SECRET env var is required.');
 
     this.accessSecret = accessSecret;
     this.refreshSecret = refreshSecret;
 
-    this.accessExpiresIn = this.configService.get<string>('JWT_ACCESS_EXPIRES_IN', '15m');
-    this.refreshExpiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '30d');
+    this.accessExpiresIn = this.configService.get<string>(
+      'JWT_ACCESS_EXPIRES_IN',
+      '15m',
+    );
+    this.refreshExpiresIn = this.configService.get<string>(
+      'JWT_REFRESH_EXPIRES_IN',
+      '30d',
+    );
+  }
+
+  private toJwtExpiresIn(raw: string): number | StringValue {
+    return /^\d+$/.test(raw) ? Number(raw) : (raw as StringValue);
   }
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (existing) throw new ConflictException('Email is already registered.');
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -62,7 +85,9 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (!user) throw new UnauthorizedException('Invalid credentials.');
 
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
@@ -72,7 +97,7 @@ export class AuthService {
   }
 
   async refresh(dto: RefreshDto) {
-    const payload = this.verifyRefreshToken(dto.refreshToken);
+    this.verifyRefreshToken(dto.refreshToken);
 
     // Refresh token rotation (server-side revocation).
     const tokenHash = this.sha256(dto.refreshToken);
@@ -82,15 +107,22 @@ export class AuthService {
     })) as RefreshTokenRecord | null;
 
     if (!record) throw new UnauthorizedException('Invalid refresh token.');
-    if (record.revokedAt) throw new UnauthorizedException('Refresh token is revoked.');
-    if (record.expiresAt.getTime() <= Date.now()) throw new UnauthorizedException('Refresh token expired.');
+    if (record.revokedAt)
+      throw new UnauthorizedException('Refresh token is revoked.');
+    if (record.expiresAt.getTime() <= Date.now())
+      throw new UnauthorizedException('Refresh token expired.');
 
-    const user = await this.prisma.user.findUnique({ where: { id: record.userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: record.userId },
+    });
     if (!user) throw new UnauthorizedException('User no longer exists.');
 
     // Issue new refresh token first, then revoke the old one to support atomic rotation intent.
-    const { accessToken, refreshToken: newRefreshToken, refreshTokenHash: newTokenHash } =
-      await this.issueTokensForUserWithRefreshRotation(user);
+    const {
+      accessToken,
+      refreshToken: newRefreshToken,
+      refreshTokenHash: newTokenHash,
+    } = await this.issueTokensForUserWithRefreshRotation(user);
 
     await this.prisma.refreshToken.update({
       where: { tokenHash },
@@ -111,8 +143,7 @@ export class AuthService {
 
     // If token is invalid or expired, still return success for idempotency.
     try {
-      const payload = this.verifyRefreshToken(dto.refreshToken);
-      if (payload.type !== 'refresh') throw new UnauthorizedException();
+      this.verifyRefreshToken(dto.refreshToken);
     } catch {
       return { success: true };
     }
@@ -129,7 +160,7 @@ export class AuthService {
     return { success: true };
   }
 
-  async me(user: AuthUser) {
+  me(user: AuthUser) {
     return user;
   }
 
@@ -149,7 +180,7 @@ export class AuthService {
     // JwtModule is configured for access tokens; jti stays in payload for auditing.
     return this.jwtService.sign(payload, {
       secret: this.accessSecret,
-      expiresIn: this.accessExpiresIn as any,
+      expiresIn: this.toJwtExpiresIn(this.accessExpiresIn),
     });
   }
 
@@ -169,11 +200,13 @@ export class AuthService {
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: this.refreshSecret,
-      expiresIn: this.refreshExpiresIn as any,
+      expiresIn: this.toJwtExpiresIn(this.refreshExpiresIn),
     });
 
     const refreshTokenHash = this.sha256(refreshToken);
-    const expiresAt = new Date(Date.now() + this.parseExpiresInMs(this.refreshExpiresIn));
+    const expiresAt = new Date(
+      Date.now() + this.parseExpiresInMs(this.refreshExpiresIn),
+    );
 
     return this.prisma.refreshToken
       .create({
@@ -201,7 +234,8 @@ export class AuthService {
     const accessJti = randomUUID();
     const accessToken = this.issueAccessToken(user, accessJti);
 
-    const { refreshToken, refreshTokenHash } = await this.createRefreshToken(user);
+    const { refreshToken, refreshTokenHash } =
+      await this.createRefreshToken(user);
 
     return { accessToken, refreshToken, refreshTokenHash };
   }
@@ -209,12 +243,15 @@ export class AuthService {
   private verifyRefreshToken(refreshToken: string): JwtRefreshPayload {
     let payload: JwtRefreshPayload;
     try {
-      payload = this.jwtService.verify<JwtRefreshPayload>(refreshToken, { secret: this.refreshSecret });
+      payload = this.jwtService.verify<JwtRefreshPayload>(refreshToken, {
+        secret: this.refreshSecret,
+      });
     } catch {
       throw new UnauthorizedException('Invalid refresh token.');
     }
 
-    if (!payload || payload.type !== 'refresh') throw new UnauthorizedException('Invalid refresh token type.');
+    if (!payload || payload.type !== 'refresh')
+      throw new UnauthorizedException('Invalid refresh token type.');
 
     return payload;
   }
@@ -238,7 +275,6 @@ export class AuthService {
       d: 24 * 60 * 60 * 1000,
     };
 
-    return amount * (msPerUnit[unit] ?? (30 * 24 * 60 * 60 * 1000));
+    return amount * (msPerUnit[unit] ?? 30 * 24 * 60 * 60 * 1000);
   }
 }
-

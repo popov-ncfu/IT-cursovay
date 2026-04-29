@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Role, User } from '@prisma/client';
+import { Role } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import * as bcrypt from 'bcryptjs';
@@ -16,13 +16,21 @@ export class UsersService {
 
   async list() {
     return this.prisma.user.findMany({
-      select: { id: true, email: true, role: true, createdAt: true, updatedAt: true },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   async create(dto: CreateUserDto) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
     if (existing) throw new ConflictException('Email is already registered.');
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -30,7 +38,13 @@ export class UsersService {
 
     return this.prisma.user.create({
       data: { email: dto.email, passwordHash, role },
-      select: { id: true, email: true, role: true, createdAt: true, updatedAt: true },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
@@ -46,8 +60,13 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: { role: dto.role },
-      select: { id: true, email: true, role: true, createdAt: true, updatedAt: true },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 }
-

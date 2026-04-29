@@ -28,4 +28,3 @@ export class AuditService {
     return { auditLogs, total, skip, take };
   }
 }
-

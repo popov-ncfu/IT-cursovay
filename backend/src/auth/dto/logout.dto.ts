@@ -6,4 +6,3 @@ export class LogoutDto {
   @MinLength(20)
   refreshToken?: string;
 }
-

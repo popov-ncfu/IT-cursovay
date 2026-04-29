@@ -22,4 +22,3 @@ export class AuditQueryDto {
   @Min(1)
   take?: number;
 }
-
